@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Live auction platform – bid in real time with anti-sniping protection and instant price updates." />
+  <title>AuctionLive – Real-Time Bidding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════
+       DESIGN TOKENS
+    ═══════════════════════════════════════════════════════════════════ */
+    :root {
+      --bg:        #0b1020;
+      --surface:   #141a2e;
+      --surface2:  #1b2340;
+      --border:    #242d47;
+      --accent1:   #6366f1; /* indigo */
+      --accent2:   #8b5cf6; /* violet */
+      --green:     #10b981;
+      --green-dim: #064e3b;
+      --red:       #ef4444;
+      --red-dim:   #450a0a;
+      --amber:     #f59e0b;
+      --text:      #e2e8f0;
+      --text-dim:  #94a3b8;
+      --text-muted:#475569;
+      --radius-sm: 8px;
+      --radius:    14px;
+      --radius-lg: 20px;
+      --shadow:    0 4px 24px rgba(0,0,0,.45);
+      --shadow-lg: 0 8px 48px rgba(0,0,0,.6);
+      --grad:      linear-gradient(135deg, var(--accent1), var(--accent2));
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       RESET & BASE
+    ═══════════════════════════════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Inter', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    a { color: inherit; text-decoration: none; }
+
+    button {
+      cursor: pointer;
+      font-family: inherit;
+      border: none;
+      outline: none;
+      transition: all .2s ease;
+    }
+
+    input {
+      font-family: inherit;
+      outline: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SCROLLBAR
+    ═══════════════════════════════════════════════════════════════════ */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--surface); }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       HEADER / NAV
+    ═══════════════════════════════════════════════════════════════════ */
+    .header {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(11,16,32,.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+
+    .logo {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 1.25rem; font-weight: 800; letter-spacing: -.5px;
+    }
+
+    .logo-icon {
+      width: 36px; height: 36px;
+      background: var(--grad);
+      border-radius: var(--radius-sm);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+    }
+
+    .logo-text span { background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+
+    .header-actions { display: flex; align-items: center; gap: 12px; }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       BUTTONS
+    ═══════════════════════════════════════════════════════════════════ */
+    .btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 20px;
+      border-radius: var(--radius-sm);
+      font-size: .875rem; font-weight: 600;
+      transition: all .2s;
+    }
+
+    .btn:focus-visible { outline: 2px solid var(--accent1); outline-offset: 2px; }
+
+    .btn-primary {
+      background: var(--grad);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(99,102,241,.4);
+    }
+    .btn-primary:hover { filter: brightness(1.15); transform: translateY(-1px); box-shadow: 0 4px 20px rgba(99,102,241,.55); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover { background: var(--surface2); color: var(--text); }
+
+    .btn-sm { padding: 7px 14px; font-size: .8rem; }
+
+    .btn-quick {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: var(--radius-sm);
+      padding: 8px 16px;
+      font-weight: 600;
+      font-size: .875rem;
+    }
+    .btn-quick:hover { border-color: var(--accent1); background: rgba(99,102,241,.12); color: var(--accent1); }
+
+    .btn-danger {
+      background: rgba(239,68,68,.15);
+      color: var(--red);
+      border: 1px solid rgba(239,68,68,.3);
+    }
+
+    /* disabled state */
+    .btn:disabled, .btn[aria-disabled="true"] {
+      opacity: .4; pointer-events: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       VIEWS – PAGE SYSTEM
+    ═══════════════════════════════════════════════════════════════════ */
+    .view { display: none; }
+    .view.active { display: block; animation: fadeIn .3s ease; }
+
+    @keyframes fadeIn {
+      from { opacity:0; transform:translateY(8px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       GRID PAGE
+    ═══════════════════════════════════════════════════════════════════ */
+    .page { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+
+    .page-title {
+      font-size: 2rem; font-weight: 800; letter-spacing: -.8px;
+      margin-bottom: 6px;
+    }
+    .page-subtitle { color: var(--text-dim); margin-bottom: 32px; }
+
+    .auction-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    /* ─── Auction Card ─── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform .25s, box-shadow .25s, border-color .25s;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+      border-color: var(--accent1);
+    }
+    .card:focus-visible {
+      outline: 2px solid var(--accent1);
+      outline-offset: 3px;
+    }
+
+    .card-banner {
+      height: 6px;
+      background: var(--grad);
+    }
+    .card-banner.closed { background: linear-gradient(135deg, #64748b, #475569); }
+
+    .card-body { padding: 20px; }
+
+    .card-status {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .8px;
+      padding: 4px 10px;
+      border-radius: 99px;
+      margin-bottom: 12px;
+    }
+    .card-status.open { background: rgba(16,185,129,.15); color: var(--green); }
+    .card-status.closed { background: rgba(100,116,139,.15); color: var(--text-dim); }
+
+    .status-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .card-status.open .status-dot { animation: pulse-dot 1.5s ease-in-out infinite; }
+
+    @keyframes pulse-dot {
+      0%,100% { opacity:1; transform:scale(1); }
+      50% { opacity:.5; transform:scale(.7); }
+    }
+
+    .card-title {
+      font-size: 1.05rem; font-weight: 700; line-height: 1.4;
+      margin-bottom: 20px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .card-price-row {
+      display: flex; align-items: flex-end; justify-content: space-between;
+    }
+
+    .card-label { font-size: .7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 2px; }
+
+    .card-price {
+      font-size: 1.75rem; font-weight: 800; letter-spacing: -1px;
+      background: var(--grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    .card-countdown {
+      font-size: .85rem; font-weight: 700;
+      color: var(--text-dim);
+      text-align: right;
+    }
+    .card-countdown.urgent { color: var(--red); }
+
+    .card-footer {
+      padding: 12px 20px;
+      border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    .card-bidder { font-size: .8rem; color: var(--text-dim); }
+    .card-bidder strong { color: var(--text); }
+
+    .card-bid-count { font-size: .75rem; color: var(--text-muted); }
+
+    /* ─── Create Auction Form ─── */
+    .create-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      margin-bottom: 32px;
+      display: none;
+    }
+    .create-panel.open { display: block; animation: fadeIn .2s ease; }
+
+    .create-panel h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 12px;
+      align-items: end;
+    }
+
+    @media (max-width: 600px) {
+      .form-row { grid-template-columns: 1fr; }
+    }
+
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: .78rem; font-weight: 600; color: var(--text-dim); }
+    .field input {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      color: var(--text);
+      font-size: .9rem;
+      transition: border-color .2s;
+    }
+    .field input:focus { border-color: var(--accent1); }
+    .field input::placeholder { color: var(--text-muted); }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       DETAIL VIEW
+    ═══════════════════════════════════════════════════════════════════ */
+    .detail-nav {
+      display: flex; align-items: center; gap: 12px;
+      padding: 20px 24px 0;
+      max-width: 1200px; margin: 0 auto;
+    }
+
+    .back-btn {
+      display: flex; align-items: center; gap: 6px;
+      font-size: .875rem; font-weight: 600; color: var(--text-dim);
+      background: none; padding: 6px 0;
+      transition: color .2s;
+    }
+    .back-btn:hover { color: var(--text); }
+
+    .detail-layout {
+      display: grid;
+      grid-template-columns: 1fr 380px;
+      gap: 24px;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    @media (max-width: 900px) {
+      .detail-layout { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Main panel ─── */
+    .detail-main {
+      display: flex; flex-direction: column; gap: 20px;
+    }
+
+    .detail-header {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+    }
+
+    .detail-status-row {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .live-indicator {
+      display: flex; align-items: center; gap: 8px;
+      font-size: .78rem; font-weight: 700; color: var(--text-muted);
+      text-transform: uppercase; letter-spacing: .7px;
+    }
+    .live-dot {
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      background: var(--text-muted);
+      transition: background .4s;
+    }
+    .live-dot.connected { background: var(--green); animation: pulse-dot 1.5s ease-in-out infinite; }
+    .live-dot.reconnecting { background: var(--amber); }
+
+    .detail-title {
+      font-size: 1.5rem; font-weight: 800; letter-spacing: -.5px; line-height: 1.3;
+      margin-bottom: 24px;
+    }
+
+    .price-section { margin-bottom: 20px; }
+
+    .price-label { font-size: .78rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .7px; margin-bottom: 6px; }
+
+    .current-price {
+      font-size: 3.5rem; font-weight: 900; letter-spacing: -2px;
+      background: var(--grad);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      transition: transform .15s;
+      display: inline-block;
+    }
+    .current-price.flash {
+      animation: price-flash .5s ease;
+    }
+
+    @keyframes price-flash {
+      0%   { filter: brightness(1); transform: scale(1); }
+      30%  { filter: brightness(1.5) drop-shadow(0 0 12px var(--green)); transform: scale(1.04); }
+      100% { filter: brightness(1); transform: scale(1); }
+    }
+
+    .timer-row {
+      display: flex; align-items: center; gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .countdown {
+      font-size: 1.1rem; font-weight: 800; letter-spacing: -.3px;
+      color: var(--text-dim);
+      transition: color .4s;
+    }
+    .countdown.urgent {
+      color: var(--red);
+      animation: pulse-text 1s ease-in-out infinite;
+    }
+    @keyframes pulse-text {
+      0%,100% { opacity:1; }
+      50% { opacity:.6; }
+    }
+
+    .extension-toast {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: rgba(99,102,241,.18);
+      border: 1px solid rgba(99,102,241,.4);
+      border-radius: 99px;
+      padding: 4px 14px;
+      font-size: .78rem; font-weight: 700; color: var(--accent1);
+      opacity: 0; transform: translateY(4px);
+      transition: opacity .3s, transform .3s;
+      pointer-events: none;
+    }
+    .extension-toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ─── Winner banner ─── */
+    .winner-banner {
+      display: none;
+      background: linear-gradient(135deg, rgba(16,185,129,.18), rgba(5,150,105,.08));
+      border: 1px solid rgba(16,185,129,.4);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      text-align: center;
+    }
+    .winner-banner.show { display: block; animation: fadeIn .5s ease; }
+    .winner-banner h3 { font-size: 1.1rem; font-weight: 800; color: var(--green); margin-bottom: 4px; }
+    .winner-banner p { color: var(--text-dim); font-size: .9rem; }
+
+    /* ─── Badge ─── */
+    .bidder-badge {
+      display: none;
+      align-items: center; gap: 6px;
+      padding: 6px 14px;
+      border-radius: 99px;
+      font-size: .78rem; font-weight: 700;
+    }
+    .bidder-badge.show { display: inline-flex; }
+    .bidder-badge.winning { background: rgba(16,185,129,.15); color: var(--green); border: 1px solid rgba(16,185,129,.3); }
+    .bidder-badge.outbid  { background: rgba(239,68,68,.12); color: var(--red); border: 1px solid rgba(239,68,68,.25); }
+
+    /* ─── Bid form panel ─── */
+    .bid-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+    }
+
+    .bid-panel h3 { font-size: 1rem; font-weight: 700; margin-bottom: 16px; }
+
+    .quick-row {
+      display: flex; gap: 8px; margin-bottom: 14px;
+    }
+    .quick-row .btn-quick { flex: 1; }
+
+    .amount-row {
+      display: flex; gap: 10px; margin-bottom: 14px;
+    }
+
+    .amount-input-wrap { flex: 1; position: relative; }
+    .amount-input-wrap::before {
+      content: '$';
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: var(--text-muted); font-weight: 600;
+      pointer-events: none;
+    }
+    #bidAmount {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px 11px 28px;
+      color: var(--text);
+      font-size: 1rem; font-weight: 600;
+      transition: border-color .2s;
+    }
+    #bidAmount:focus { border-color: var(--accent1); }
+
+    #bidderName {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      color: var(--text);
+      font-size: .9rem;
+      width: 100%;
+      margin-bottom: 14px;
+      transition: border-color .2s;
+    }
+    #bidderName:focus { border-color: var(--accent1); }
+    #bidderName::placeholder { color: var(--text-muted); }
+
+    .bid-submit-btn {
+      width: 100%;
+      background: var(--grad);
+      color: #fff;
+      border-radius: var(--radius-sm);
+      padding: 13px;
+      font-size: 1rem; font-weight: 700;
+      box-shadow: 0 2px 16px rgba(99,102,241,.4);
+      transition: filter .2s, transform .15s, box-shadow .2s;
+    }
+    .bid-submit-btn:hover:not(:disabled) {
+      filter: brightness(1.1);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 24px rgba(99,102,241,.55);
+    }
+    .bid-submit-btn:active:not(:disabled) { transform: translateY(0); }
+    .bid-submit-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+
+    .bid-error {
+      background: rgba(239,68,68,.1);
+      border: 1px solid rgba(239,68,68,.3);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: .85rem; color: var(--red);
+      margin-top: 10px;
+      display: none;
+    }
+    .bid-error.show { display: block; animation: fadeIn .2s ease; }
+
+    .bid-success {
+      background: rgba(16,185,129,.1);
+      border: 1px solid rgba(16,185,129,.3);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: .85rem; color: var(--green);
+      margin-top: 10px;
+      display: none;
+    }
+    .bid-success.show { display: block; animation: fadeIn .2s ease; }
+
+    /* ─── Bid History ─── */
+    .history-panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .history-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .history-header h3 { font-size: 1rem; font-weight: 700; }
+    .bid-count-badge {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 2px 10px;
+      font-size: .75rem; font-weight: 600; color: var(--text-dim);
+    }
+
+    .bid-list { max-height: 420px; overflow-y: auto; }
+
+    .bid-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 12px 20px;
+      border-bottom: 1px solid var(--border);
+      animation: slideIn .3s ease;
+    }
+    .bid-item:last-child { border-bottom: none; }
+
+    @keyframes slideIn {
+      from { opacity:0; transform:translateX(-16px); }
+      to   { opacity:1; transform:translateX(0); }
+    }
+
+    .bid-info { display: flex; flex-direction: column; gap: 2px; }
+    .bid-name { font-size: .9rem; font-weight: 600; }
+    .bid-name.winner-bid { color: var(--green); }
+    .bid-time { font-size: .72rem; color: var(--text-muted); }
+
+    .bid-amount-pill {
+      background: rgba(99,102,241,.12);
+      border: 1px solid rgba(99,102,241,.25);
+      border-radius: 99px;
+      padding: 4px 12px;
+      font-size: .85rem; font-weight: 700; color: var(--accent1);
+    }
+    .bid-item:first-child .bid-amount-pill {
+      background: rgba(16,185,129,.15);
+      border-color: rgba(16,185,129,.3);
+      color: var(--green);
+    }
+
+    .bid-empty {
+      text-align: center;
+      padding: 32px;
+      color: var(--text-muted);
+      font-size: .9rem;
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       TOAST NOTIFICATIONS
+    ═══════════════════════════════════════════════════════════════════ */
+    #toast-container {
+      position: fixed; bottom: 24px; right: 24px;
+      display: flex; flex-direction: column; gap: 10px;
+      z-index: 999;
+      pointer-events: none;
+    }
+
+    .toast {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 18px;
+      font-size: .85rem; font-weight: 500;
+      box-shadow: var(--shadow);
+      animation: toastIn .3s ease;
+      pointer-events: auto;
+      max-width: 320px;
+    }
+    @keyframes toastIn {
+      from { opacity:0; transform:translateY(16px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .toast.success { border-color: rgba(16,185,129,.4); color: var(--green); }
+    .toast.error   { border-color: rgba(239,68,68,.4);  color: var(--red); }
+    .toast.info    { border-color: rgba(99,102,241,.4); color: var(--accent1); }
+
+    /* ═══════════════════════════════════════════════════════════════════
+       SKELETON LOADER
+    ═══════════════════════════════════════════════════════════════════ */
+    .skeleton {
+      background: linear-gradient(90deg, var(--surface) 25%, var(--surface2) 50%, var(--surface) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 6px;
+    }
+    @keyframes shimmer {
+      from { background-position: 200% 0; }
+      to   { background-position: -200% 0; }
+    }
+    .sk-card { height: 200px; border-radius: var(--radius-lg); }
+  </style>
+</head>
+
+<body>
+
+<!-- ═══════ HEADER ═══════════════════════════════════════════════════════════ -->
+<header class="header">
+  <div class="logo" role="banner">
+    <div class="logo-icon" aria-hidden="true">🔨</div>
+    <div class="logo-text">Auction<span>Live</span></div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-ghost btn-sm" id="toggleCreateBtn" aria-expanded="false" aria-controls="createPanel">
+      + New Auction
+    </button>
+  </div>
+</header>
+
+<!-- ═══════ TOAST CONTAINER ═════════════════════════════════════════════════ -->
+<div id="toast-container" aria-live="polite" aria-label="Notifications"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     VIEW: AUCTION GRID
+ ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="view-grid" class="view active" role="main">
+  <div class="page">
+
+    <!-- Create Auction Panel -->
+    <div class="create-panel" id="createPanel" aria-label="Create new auction">
+      <h3>Create New Auction</h3>
+      <div class="form-row">
+        <div class="field">
+          <label for="newTitle">Item Title</label>
+          <input id="newTitle" type="text" placeholder='e.g. "Signed Jordan Jersey"' maxlength="120" />
+        </div>
+        <div class="field">
+          <label for="newPrice">Starting Price ($)</label>
+          <input id="newPrice" type="number" min="0" step="1" placeholder="e.g. 500" style="width:140px" />
+        </div>
+        <div class="field">
+          <label for="newDuration">Duration (seconds)</label>
+          <input id="newDuration" type="number" min="10" step="10" value="300" placeholder="300" style="width:140px" />
+        </div>
+      </div>
+      <div style="margin-top:16px; display:flex; gap:10px;">
+        <button class="btn btn-primary" id="createAuctionBtn">Create Auction</button>
+        <button class="btn btn-ghost" id="cancelCreateBtn">Cancel</button>
+      </div>
+    </div>
+
+    <h1 class="page-title">Live Auctions</h1>
+    <p class="page-subtitle">Bid in real time. Prices update instantly across all devices.</p>
+
+    <div class="auction-grid" id="auctionGrid" role="list" aria-label="Auction items">
+      <!-- Skeletons while loading -->
+      <div class="skeleton sk-card" aria-hidden="true"></div>
+      <div class="skeleton sk-card" aria-hidden="true"></div>
+      <div class="skeleton sk-card" aria-hidden="true"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     VIEW: AUCTION DETAIL
+ ═══════════════════════════════════════════════════════════════════════════ -->
+<div id="view-detail" class="view" role="main" aria-label="Auction detail">
+
+  <nav class="detail-nav">
+    <button class="back-btn" id="backBtn" aria-label="Back to auction list">
+      ← All Auctions
+    </button>
+    <!-- SSE status indicator -->
+    <div class="live-indicator" role="status" aria-live="polite" aria-label="Connection status">
+      <div class="live-dot" id="liveDot"></div>
+      <span id="liveLabel">Connecting…</span>
+    </div>
+  </nav>
+
+  <div class="detail-layout">
+
+    <!-- LEFT: Main info -->
+    <div class="detail-main">
+
+      <!-- Header card -->
+      <div class="detail-header">
+        <div class="detail-status-row">
+          <div id="detailStatusBadge" class="card-status open">
+            <div class="status-dot"></div>
+            <span>Live</span>
+          </div>
+          <div id="bidderBadge" class="bidder-badge"></div>
+        </div>
+
+        <h2 class="detail-title" id="detailTitle">Loading…</h2>
+
+        <div class="price-section">
+          <div class="price-label">Current Bid</div>
+          <div class="current-price" id="currentPrice">$0</div>
+        </div>
+
+        <div class="timer-row">
+          <div>
+            <div class="price-label">Time Remaining</div>
+            <div class="countdown" id="countdown" role="timer" aria-live="polite">–</div>
+          </div>
+          <div class="extension-toast" id="extensionToast" aria-live="polite" role="alert">
+            ⚡ +30s extended!
+          </div>
+        </div>
+      </div>
+
+      <!-- Winner Banner (shown when closed) -->
+      <div class="winner-banner" id="winnerBanner" role="alert" aria-live="polite">
+        <h3>🏆 Auction Closed</h3>
+        <p id="winnerText"></p>
+      </div>
+
+      <!-- Bid History -->
+      <div class="history-panel" aria-label="Bid history">
+        <div class="history-header">
+          <h3>Bid History</h3>
+          <span class="bid-count-badge" id="bidCountBadge">0 bids</span>
+        </div>
+        <div class="bid-list" id="bidList" role="list">
+          <div class="bid-empty" id="bidEmpty">No bids yet. Be the first!</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- RIGHT: Bid form -->
+    <div>
+      <div class="bid-panel" id="bidFormPanel">
+        <h3>Place Your Bid</h3>
+
+        <input id="bidderName" type="text" placeholder="Your name" maxlength="40"
+               aria-label="Your bidder name" autocomplete="nickname" />
+
+        <div class="quick-row" role="group" aria-label="Quick bid increments">
+          <button class="btn-quick" data-increment="10"  aria-label="Increase bid by $10">+$10</button>
+          <button class="btn-quick" data-increment="50"  aria-label="Increase bid by $50">+$50</button>
+          <button class="btn-quick" data-increment="100" aria-label="Increase bid by $100">+$100</button>
+        </div>
+
+        <div class="amount-row">
+          <div class="amount-input-wrap">
+            <input id="bidAmount" type="number" min="0" step="1" placeholder="0"
+                   aria-label="Bid amount in dollars" />
+          </div>
+        </div>
+
+        <button class="bid-submit-btn" id="placeBidBtn" aria-label="Submit bid">
+          Place Bid
+        </button>
+
+        <div class="bid-error" id="bidError" role="alert"></div>
+        <div class="bid-success" id="bidSuccess" role="status"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+ ═══════════════════════════════════════════════════════════════════════════ -->
+<script>
+'use strict';
+
+// ─── State ───────────────────────────────────────────────────────────────────
+const state = {
+  auctions:        [],       // grid data
+  currentAuction:  null,     // detail view data
+  currentBidder:   '',       // persisted across bids in session
+  eventSource:     null,     // active SSE connection
+  countdownTimer:  null,     // setInterval handle
+};
+
+// ─── Utilities ───────────────────────────────────────────────────────────────
+
+function $(id) { return document.getElementById(id); }
+
+function fmt(n) {
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
+}
+
+function fmtTime(ts) {
+  const now = Date.now();
+  const diff = Math.max(0, ts - now);
+  const s = Math.floor(diff / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${h}h ${m % 60}m ${s % 60}s`;
+  if (m > 0) return `${m}m ${s % 60}s`;
+  return `${s}s`;
+}
+
+function timeUrgent(ts) { return ts - Date.now() <= 30_000; }
+
+function showToast(msg, type = 'info', duration = 4000) {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  $('toast-container').appendChild(el);
+  setTimeout(() => {
+    el.style.opacity = '0';
+    el.style.transform = 'translateY(16px)';
+    el.style.transition = 'opacity .3s, transform .3s';
+    setTimeout(() => el.remove(), 350);
+  }, duration);
+}
+
+// ─── View routing ─────────────────────────────────────────────────────────────
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  $(id).classList.add('active');
+}
+
+// ─── Grid page ───────────────────────────────────────────────────────────────
+
+async function loadGrid() {
+  try {
+    const res = await fetch('/auctions');
+    if (!res.ok) throw new Error('Failed to load auctions');
+    state.auctions = await res.json();
+    renderGrid();
+  } catch (e) {
+    showToast('Could not load auctions. Is the server running?', 'error');
+  }
+}
+
+function renderGrid() {
+  const grid = $('auctionGrid');
+  if (state.auctions.length === 0) {
+    grid.innerHTML = '<p style="color:var(--text-dim);grid-column:1/-1">No auctions yet.</p>';
+    return;
+  }
+
+  grid.innerHTML = state.auctions
+    .slice()
+    .sort((a, b) => a.status === 'closed' ? 1 : -1) // open first
+    .map(a => cardHTML(a))
+    .join('');
+
+  // Attach click handlers
+  grid.querySelectorAll('.card').forEach(el => {
+    el.addEventListener('click', () => openDetail(el.dataset.id));
+    el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openDetail(el.dataset.id); });
+  });
+
+  // Start countdown tickers on cards
+  startCardTimers();
+}
+
+function cardHTML(a) {
+  const closed = a.status === 'closed';
+  const urgent = !closed && timeUrgent(a.endsAt);
+  const remaining = closed ? 'Ended' : fmtTime(a.endsAt);
+  const bidCount = a.bids.length;
+
+  return `
+  <article class="card" tabindex="0" role="listitem" data-id="${a.id}"
+           data-ends="${a.endsAt}" data-status="${a.status}"
+           aria-label="${a.title}">
+    <div class="card-banner ${closed ? 'closed' : ''}"></div>
+    <div class="card-body">
+      <div class="card-status ${a.status}">
+        <div class="status-dot"></div>
+        <span>${closed ? 'Closed' : 'Live'}</span>
+      </div>
+      <div class="card-title">${escHtml(a.title)}</div>
+      <div class="card-price-row">
+        <div>
+          <div class="card-label">Current Bid</div>
+          <div class="card-price">${fmt(a.currentPrice)}</div>
+        </div>
+        <div>
+          <div class="card-label" style="text-align:right">Remaining</div>
+          <div class="card-countdown ${urgent ? 'urgent' : ''}" data-countdown="${a.id}">
+            ${remaining}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-footer">
+      <span class="card-bidder">
+        ${a.highestBidder
+          ? `Leading: <strong>${escHtml(a.highestBidder)}</strong>`
+          : 'No bids yet'}
+      </span>
+      <span class="card-bid-count">${bidCount} bid${bidCount !== 1 ? 's' : ''}</span>
+    </div>
+  </article>`;
+}
+
+function startCardTimers() {
+  if (state._cardTimer) clearInterval(state._cardTimer);
+  state._cardTimer = setInterval(() => {
+    document.querySelectorAll('[data-countdown]').forEach(el => {
+      const aId = el.dataset.countdown;
+      const a   = state.auctions.find(x => x.id === aId);
+      if (!a || a.status === 'closed') return;
+      const urgent = timeUrgent(a.endsAt);
+      el.textContent = fmtTime(a.endsAt);
+      el.classList.toggle('urgent', urgent);
+    });
+  }, 1000);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ─── Detail view ─────────────────────────────────────────────────────────────
+
+async function openDetail(id) {
+  showView('view-detail');
+  clearDetailState();
+
+  try {
+    const res = await fetch(`/auctions/${id}`);
+    if (!res.ok) { showToast('Auction not found', 'error'); return; }
+    const auction = await res.json();
+    state.currentAuction = auction;
+    renderDetail(auction);
+    connectSSE(id);
+  } catch (e) {
+    showToast('Failed to load auction', 'error');
+  }
+}
+
+function clearDetailState() {
+  disconnectSSE();
+  if (state.countdownTimer) clearInterval(state.countdownTimer);
+  $('bidError').classList.remove('show');
+  $('bidSuccess').classList.remove('show');
+  $('winnerBanner').classList.remove('show');
+  $('extensionToast').classList.remove('show');
+  $('bidderBadge').classList.remove('show', 'winning', 'outbid');
+}
+
+function renderDetail(a) {
+  $('detailTitle').textContent = a.title;
+  updateDetailPrice(a);
+  renderBidList(a.bids);
+  updateDetailStatus(a);
+  startCountdown(a);
+}
+
+function updateDetailPrice(a) {
+  const el = $('currentPrice');
+  const prev = el.textContent;
+  const next = fmt(a.currentPrice);
+  if (prev !== next && prev !== '$0') {
+    el.classList.remove('flash');
+    void el.offsetWidth; // force reflow to restart animation
+    el.classList.add('flash');
+  }
+  el.textContent = next;
+}
+
+function updateDetailStatus(a) {
+  const statusBadge = $('detailStatusBadge');
+  const bidPanel    = $('bidFormPanel');
+
+  if (a.status === 'closed') {
+    statusBadge.className = 'card-status closed';
+    statusBadge.innerHTML = '<div class="status-dot"></div><span>Closed</span>';
+    $('placeBidBtn').disabled = true;
+    $('placeBidBtn').textContent = 'Auction Ended';
+
+    // Show winner banner
+    const banner   = $('winnerBanner');
+    const winnerTxt = $('winnerText');
+    if (a.highestBidder) {
+      winnerTxt.textContent = `SOLD to ${a.highestBidder} for ${fmt(a.currentPrice)}`;
+    } else {
+      winnerTxt.textContent = 'No bids were placed.';
+    }
+    banner.classList.add('show');
+
+    // Update bidder badge if relevant
+    updateBidderBadge(a);
+  } else {
+    statusBadge.className = 'card-status open';
+    statusBadge.innerHTML = '<div class="status-dot"></div><span>Live</span>';
+    $('placeBidBtn').disabled = false;
+    $('placeBidBtn').textContent = 'Place Bid';
+    updateBidderBadge(a);
+  }
+}
+
+function updateBidderBadge(a) {
+  const badge  = $('bidderBadge');
+  const bidder = state.currentBidder || $('bidderName').value.trim();
+  if (!bidder) { badge.classList.remove('show'); return; }
+
+  badge.classList.remove('winning', 'outbid');
+  if (a.highestBidder === bidder) {
+    badge.className = 'bidder-badge show winning';
+    badge.textContent = '✓ You are winning';
+  } else if (a.bids.some(b => b.bidder === bidder)) {
+    badge.className = 'bidder-badge show outbid';
+    badge.textContent = '↑ You were outbid';
+  } else {
+    badge.classList.remove('show');
+  }
+}
+
+function renderBidList(bids) {
+  const list  = $('bidList');
+  const empty = $('bidEmpty');
+  const badge = $('bidCountBadge');
+
+  badge.textContent = `${bids.length} bid${bids.length !== 1 ? 's' : ''}`;
+
+  if (bids.length === 0) {
+    empty.style.display = '';
+    list.querySelectorAll('.bid-item').forEach(el => el.remove());
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  // Rebuild list (SSE keeps bids array up to date)
+  list.innerHTML = bids.map((b, i) => `
+    <div class="bid-item" role="listitem">
+      <div class="bid-info">
+        <div class="bid-name ${i === 0 ? 'winner-bid' : ''}">${escHtml(b.bidder)}</div>
+        <div class="bid-time">${new Date(b.placedAt).toLocaleTimeString()}</div>
+      </div>
+      <div class="bid-amount-pill">${fmt(b.amount)}</div>
+    </div>`).join('');
+}
+
+function startCountdown(a) {
+  if (state.countdownTimer) clearInterval(state.countdownTimer);
+
+  function tick() {
+    const el = $('countdown');
+    if (!el) { clearInterval(state.countdownTimer); return; }
+
+    if (!state.currentAuction || state.currentAuction.status === 'closed') {
+      el.textContent = 'Ended';
+      el.classList.remove('urgent');
+      clearInterval(state.countdownTimer);
+      return;
+    }
+
+    const endsAt = state.currentAuction.endsAt;
+    el.textContent = fmtTime(endsAt);
+    el.classList.toggle('urgent', timeUrgent(endsAt));
+  }
+
+  tick();
+  state.countdownTimer = setInterval(tick, 500);
+}
+
+// ─── SSE connection ───────────────────────────────────────────────────────────
+
+function connectSSE(auctionId) {
+  disconnectSSE();
+  setLiveStatus('connecting');
+
+  let retryDelay = 1000;
+
+  function connect() {
+    const es = new EventSource(`/auctions/${auctionId}/stream`);
+    state.eventSource = es;
+
+    es.addEventListener('update', e => {
+      retryDelay = 1000; // reset backoff on success
+      const prev = state.currentAuction ? state.currentAuction.endsAt : null;
+      state.currentAuction = JSON.parse(e.data);
+
+      updateDetailPrice(state.currentAuction);
+      renderBidList(state.currentAuction.bids);
+      updateDetailStatus(state.currentAuction);
+
+      // Show extension toast if endsAt jumped
+      if (prev && state.currentAuction.endsAt > prev + 5000) {
+        showExtensionToast();
+      }
+
+      // Update the card in the grid too (if it exists)
+      refreshGridCard(state.currentAuction);
+
+      setLiveStatus('connected');
+    });
+
+    es.addEventListener('closed', e => {
+      state.currentAuction = JSON.parse(e.data);
+      state.currentAuction.status = 'closed';
+      updateDetailStatus(state.currentAuction);
+      renderBidList(state.currentAuction.bids);
+      refreshGridCard(state.currentAuction);
+      setLiveStatus('disconnected');
+      es.close();
+      showToast(`Auction closed! ${state.currentAuction.highestBidder ? 'Winner: ' + state.currentAuction.highestBidder : 'No winner.'}`, 'info', 6000);
+    });
+
+    es.onerror = () => {
+      setLiveStatus('reconnecting');
+      es.close();
+      // Exponential backoff reconnect, max 10 s
+      setTimeout(() => {
+        if (state.currentAuction && state.currentAuction.status !== 'closed') {
+          connect();
+        }
+      }, retryDelay);
+      retryDelay = Math.min(retryDelay * 2, 10_000);
+    };
+
+    es.onopen = () => setLiveStatus('connected');
+  }
+
+  connect();
+}
+
+function disconnectSSE() {
+  if (state.eventSource) {
+    state.eventSource.close();
+    state.eventSource = null;
+  }
+}
+
+function setLiveStatus(status) {
+  const dot   = $('liveDot');
+  const label = $('liveLabel');
+  dot.className = 'live-dot';
+  if (status === 'connected') {
+    dot.classList.add('connected');
+    label.textContent = 'Live';
+  } else if (status === 'reconnecting') {
+    dot.classList.add('reconnecting');
+    label.textContent = 'Reconnecting…';
+  } else if (status === 'disconnected') {
+    label.textContent = 'Closed';
+  } else {
+    label.textContent = 'Connecting…';
+  }
+}
+
+// ─── Extension toast ─────────────────────────────────────────────────────────
+
+function showExtensionToast() {
+  const toast = $('extensionToast');
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 3500);
+  showToast('⚡ Anti-sniping triggered! +30 seconds added.', 'info');
+}
+
+// ─── Grid card refresh (live updates while on grid view, or in background) ───
+
+function refreshGridCard(auction) {
+  const idx = state.auctions.findIndex(a => a.id === auction.id);
+  if (idx === -1) {
+    state.auctions.push(auction);
+  } else {
+    state.auctions[idx] = auction;
+  }
+  // Update just the specific card's price if visible
+  const card = document.querySelector(`.card[data-id="${auction.id}"]`);
+  if (card) {
+    const priceEl = card.querySelector('.card-price');
+    if (priceEl) priceEl.textContent = fmt(auction.currentPrice);
+    const bidderEl = card.querySelector('.card-bidder');
+    if (bidderEl) bidderEl.innerHTML = auction.highestBidder
+      ? `Leading: <strong>${escHtml(auction.highestBidder)}</strong>`
+      : 'No bids yet';
+  }
+}
+
+// ─── Bid submission ───────────────────────────────────────────────────────────
+
+async function placeBid() {
+  const bidder = $('bidderName').value.trim();
+  const amount = parseFloat($('bidAmount').value);
+  const errorEl   = $('bidError');
+  const successEl = $('bidSuccess');
+
+  errorEl.classList.remove('show');
+  successEl.classList.remove('show');
+
+  if (!bidder) {
+    errorEl.textContent = 'Please enter your name.';
+    errorEl.classList.add('show');
+    $('bidderName').focus();
+    return;
+  }
+  if (!amount || isNaN(amount) || amount <= 0) {
+    errorEl.textContent = 'Please enter a valid bid amount.';
+    errorEl.classList.add('show');
+    $('bidAmount').focus();
+    return;
+  }
+
+  state.currentBidder = bidder;
+  const btn = $('placeBidBtn');
+  btn.disabled = true;
+  btn.textContent = 'Placing bid…';
+
+  try {
+    const res = await fetch(`/auctions/${state.currentAuction.id}/bids`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bidder, amount }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      errorEl.textContent = data.error || 'Bid rejected.';
+      errorEl.classList.add('show');
+    } else {
+      successEl.textContent = `Bid of ${fmt(amount)} placed successfully!`;
+      successEl.classList.add('show');
+      $('bidAmount').value = '';
+      showToast(`Bid of ${fmt(amount)} accepted!`, 'success');
+      setTimeout(() => successEl.classList.remove('show'), 4000);
+    }
+  } catch {
+    errorEl.textContent = 'Network error. Please try again.';
+    errorEl.classList.add('show');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Place Bid';
+  }
+}
+
+// ─── Quick bid buttons ────────────────────────────────────────────────────────
+
+document.querySelectorAll('.btn-quick[data-increment]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const current = state.currentAuction ? state.currentAuction.currentPrice : 0;
+    const inc     = parseInt(btn.dataset.increment, 10);
+    $('bidAmount').value = current + inc;
+  });
+});
+
+// ─── Create auction ───────────────────────────────────────────────────────────
+
+$('toggleCreateBtn').addEventListener('click', () => {
+  const panel   = $('createPanel');
+  const isOpen  = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  $('toggleCreateBtn').setAttribute('aria-expanded', !isOpen);
+  if (!isOpen) $('newTitle').focus();
+});
+
+$('cancelCreateBtn').addEventListener('click', () => {
+  $('createPanel').classList.remove('open');
+  $('toggleCreateBtn').setAttribute('aria-expanded', 'false');
+});
+
+$('createAuctionBtn').addEventListener('click', async () => {
+  const title           = $('newTitle').value.trim();
+  const startingPrice   = parseFloat($('newPrice').value);
+  const durationSeconds = parseInt($('newDuration').value, 10);
+
+  if (!title)                       return showToast('Title is required', 'error');
+  if (isNaN(startingPrice) || startingPrice < 0) return showToast('Invalid starting price', 'error');
+  if (isNaN(durationSeconds) || durationSeconds < 10) return showToast('Duration must be at least 10 seconds', 'error');
+
+  try {
+    const res = await fetch('/auctions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, startingPrice, durationSeconds }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      return showToast(err.error || 'Failed to create auction', 'error');
+    }
+    const a = await res.json();
+    state.auctions.unshift(a);
+    renderGrid();
+    $('createPanel').classList.remove('open');
+    $('toggleCreateBtn').setAttribute('aria-expanded', 'false');
+    $('newTitle').value = '';
+    $('newPrice').value = '';
+    $('newDuration').value = '300';
+    showToast(`Auction "${a.title}" created!`, 'success');
+  } catch {
+    showToast('Network error', 'error');
+  }
+});
+
+// ─── Event wiring ─────────────────────────────────────────────────────────────
+
+$('backBtn').addEventListener('click', () => {
+  disconnectSSE();
+  if (state.countdownTimer) clearInterval(state.countdownTimer);
+  showView('view-grid');
+  loadGrid(); // refresh grid with latest data
+});
+
+$('placeBidBtn').addEventListener('click', placeBid);
+
+$('bidAmount').addEventListener('keydown', e => {
+  if (e.key === 'Enter') placeBid();
+});
+
+// Update bidder badge live as user types their name
+$('bidderName').addEventListener('input', () => {
+  state.currentBidder = $('bidderName').value.trim();
+  if (state.currentAuction) updateBidderBadge(state.currentAuction);
+});
+
+// ─── Bootstrap ───────────────────────────────────────────────────────────────
+loadGrid();
+
+// Poll the grid every 30 s to catch auctions that closed while browsing
+setInterval(() => {
+  if (document.getElementById('view-grid').classList.contains('active')) {
+    loadGrid();
+  }
+}, 30_000);
+</script>
+
+</body>
+</html>
